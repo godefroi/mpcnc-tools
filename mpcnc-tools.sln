@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "foam-cutter", "foam-cutter\foam-cutter.csproj", "{CF395EA5-B5CA-4C82-ADFB-4DF528482EA5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "process-gcode", "process-gcode\process-gcode.csproj", "{CC24D72A-2BCE-4770-92D5-2E33A2018C39}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CF395EA5-B5CA-4C82-ADFB-4DF528482EA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF395EA5-B5CA-4C82-ADFB-4DF528482EA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF395EA5-B5CA-4C82-ADFB-4DF528482EA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF395EA5-B5CA-4C82-ADFB-4DF528482EA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC24D72A-2BCE-4770-92D5-2E33A2018C39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC24D72A-2BCE-4770-92D5-2E33A2018C39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC24D72A-2BCE-4770-92D5-2E33A2018C39}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC24D72A-2BCE-4770-92D5-2E33A2018C39}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
