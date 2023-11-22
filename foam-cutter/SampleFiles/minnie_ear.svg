@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500mm" height="500mm">
+    <!--
+        Diameter is 3.25 in or 82.55 mm
+        Distance between start and end of the arc is 1.6 in or 40.64 mm
+    -->
+    <path style="stroke:red;fill:none;stroke-width:1" d="M 100 200 A 41.275 41.275 0 1 1 140.64 200 A 41.275 41.275 0 0 0 100 200" />
+</svg>
