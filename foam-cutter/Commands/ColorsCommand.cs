@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.Drawing;
-using System.Security.Cryptography;
 using IxMilia.Dxf;
 using IxMilia.Dxf.Entities;
 using Svg;

@@ -1,13 +1,13 @@
 using System.Drawing;
 using Svg;
 
-namespace FoamCutter;
+namespace FoamCutter.Paths;
 
 public partial class PathBuilder
 {
-	private static List<Path> GetPaths(SvgDocument svg)
+	private static List<MachinePath> GetPaths(SvgDocument svg)
 	{
-		var paths = new List<Path>();
+		var paths = new List<MachinePath>();
 
 		svg.ApplyRecursive(elem => {
 			foreach (var path in GetPaths(elem)) {
@@ -18,7 +18,7 @@ public partial class PathBuilder
 		return paths;
 	}
 
-	private static IEnumerable<Path> GetPaths(SvgElement element)
+	private static IEnumerable<MachinePath> GetPaths(SvgElement element)
 	{
 		switch (element) {
 			case SvgDocument doc: // ignore
@@ -38,7 +38,7 @@ public partial class PathBuilder
 		}
 	}
 
-	private static Path? ExpandPath(Svg.Pathing.SvgPathSegmentList segmentList, SegmentType segmentType)
+	private static MachinePath? ExpandPath(Svg.Pathing.SvgPathSegmentList segmentList, SegmentType segmentType)
 	{
 		var path = new SvgPathProperties.SvgPath(segmentList.ToString(), false);
 
@@ -50,7 +50,7 @@ public partial class PathBuilder
 			throw new NotSupportedException("Beginning an SVG path with anything but a move command is not supported.");
 		}
 
-		var spath = new Path(segmentType, MakePoint(initalMove.X, initalMove.Y, 3));
+		var spath = new MachinePath(segmentType, MakePoint(initalMove.X, initalMove.Y, 3));
 
 		foreach (var command in path.Segments.Skip(1)) {
 			switch (command) {

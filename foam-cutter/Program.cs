@@ -2,6 +2,7 @@
 using System.Drawing;
 using FoamCutter.Commands;
 using FoamCutter.Machine;
+using FoamCutter.Paths;
 using IxMilia.Dxf;
 using IxMilia.Dxf.Entities;
 using Svg;
@@ -92,13 +93,13 @@ public class Program
 		// });
 	}
 
-	private static List<Path> ReadPaths(string filename) => System.IO.Path.GetExtension(filename) switch {
+	private static List<MachinePath> ReadPaths(string filename) => System.IO.Path.GetExtension(filename) switch {
 			".dxf" => PathBuilder.BuildPaths(DxfFile.Load(filename)),
 			".svg" => PathBuilder.BuildPaths(SvgDocument.Open(filename)),
 			_ => throw new NotSupportedException($"The specified extension is not supported: {System.IO.Path.GetExtension(filename)}"),
 		};
 
-	private static void BuildCode(IEnumerable<Path> paths, Config config, TextWriter output)
+	private static void BuildCode(IEnumerable<MachinePath> paths, Config config, TextWriter output)
 	{
 		static void EmitMove(float toX, float toY, float toZ, State state, Config config, TextWriter output)
 		{
@@ -129,7 +130,7 @@ public class Program
 			state.Z = toZ;
 		}
 
-		static void GenerateMoves(IEnumerable<Path> paths, State state, float cutDepth, Config config, TextWriter output)
+		static void GenerateMoves(IEnumerable<MachinePath> paths, State state, float cutDepth, Config config, TextWriter output)
 		{
 			foreach (var path in paths) {
 				// travel to the initial point in the path
