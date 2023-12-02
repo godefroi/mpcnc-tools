@@ -5,7 +5,7 @@ namespace FoamCutter;
 
 public partial class PathBuilder
 {
-	private static IEnumerable<Path> GetPaths(SvgDocument svg)
+	private static List<Path> GetPaths(SvgDocument svg)
 	{
 		var paths = new List<Path>();
 

@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+﻿using System.CommandLine;
+using System.Drawing;
+using FoamCutter.Commands;
 using FoamCutter.Machine;
 using IxMilia.Dxf;
 using IxMilia.Dxf.Entities;
@@ -14,7 +16,22 @@ public class Program
 	// the ratio of these is 2.5400 so it looks like we're on the right track.
 	// if we want the output svg in mm, we should scale the whole file by (0.3080243484622777673631323069921)
 
-	public static void Main(string[] args)
+	public static async Task Main(string[] args)
+	{
+		var inputFileOption = new Option<FileInfo>("--input", "Input filename");
+
+		var rootCommand = new RootCommand("G-CODE generation tool for the MPCNC foam (needle) cutter") {
+			ColorsCommand.GetCommand(),
+		};
+
+		rootCommand.SetHandler(() => {
+			Console.WriteLine("here we are.");
+		});
+
+		await rootCommand.InvokeAsync(args);
+	}
+
+	private static void OldMain()
 	{
 		//PathBuilder.DrawTheArc();
 		//return;
@@ -80,53 +97,6 @@ public class Program
 			".svg" => PathBuilder.BuildPaths(SvgDocument.Open(filename)),
 			_ => throw new NotSupportedException($"The specified extension is not supported: {System.IO.Path.GetExtension(filename)}"),
 		};
-
-	private static void ListSvgColors(string filename)
-	{
-		var colorDict = typeof(Color)
-			.GetProperties(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public)
-			.Where(pi => pi.PropertyType == typeof(Color))
-			.Select(pi => pi.GetValue(null))
-			.OfType<Color>()
-			.DistinctBy(c => c.ToArgb())
-			.ToDictionary(c => c.ToArgb(), c => c.Name);
-
-		var svg    = SvgDocument.Open(filename);
-		var colors = GetColors(svg);
-
-		Console.WriteLine("Colors:");
-		foreach (var color in colors) {
-			if (colorDict.ContainsKey(color)) {
-				Console.WriteLine($"  {colorDict[color]}");
-			} else {
-				var fromArgb = Color.FromArgb(color);
-				Console.WriteLine($"  [A={fromArgb.A}, R={fromArgb.R}, G={fromArgb.G}, B={fromArgb.B}]");
-			}
-		}
-	}
-
-	private static HashSet<int> GetColors(SvgDocument svg)
-	{
-		var colors = new HashSet<int>();
-
-		svg.ApplyRecursive(elem => {
-			switch (elem) {
-				case SvgDocument doc: // ignore
-				case SvgDescription desc: // ignore these
-				case SvgGroup group: // ignore these (the groupings in the source seem arbitrary)
-					break;
-				case SvgPath path:
-					if (elem.Stroke != null && elem.Stroke is SvgColourServer colourServer) {
-						colors.Add(colourServer.Colour.ToArgb());
-					}
-					break;
-				default:
-					throw new NotImplementedException($"The element type {elem.GetType().Name} is not yet implemented.");
-			}
-		});
-
-		return colors;
-	}
 
 	private static void BuildCode(IEnumerable<Path> paths, Config config, TextWriter output)
 	{
