@@ -38,7 +38,7 @@ internal static class ColorsCommand
 		await Task.CompletedTask;
 	}
 
-	private static void ListColors(HashSet<Color> argbColors)
+	private static void ListColors(HashSet<Color> colors)
 	{
 		var colorDict = typeof(Color)
 			.GetProperties(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public)
@@ -49,14 +49,14 @@ internal static class ColorsCommand
 			.ToDictionary(c => c.ToArgb(), c => c.Name);
 
 		Console.WriteLine("Colors:");
-		// foreach (var color in argbColors) {
-		// 	if (colorDict.TryGetValue(color, out var value)) {
-		// 		Console.WriteLine($"  {value}");
-		// 	} else {
-		// 		var fromArgb = Color.FromArgb(color);
-		// 		Console.WriteLine($"  [A={fromArgb.A}, R={fromArgb.R}, G={fromArgb.G}, B={fromArgb.B}]");
-		// 	}
-		// }
+
+		foreach (var color in colors) {
+			if (colorDict.TryGetValue(color.ToArgb(), out var value)) {
+				Console.WriteLine($"  {value}");
+			} else {
+				Console.WriteLine($"  [A={color.A}, R={color.R}, G={color.G}, B={color.B}]");
+			}
+		}
 	}
 
 	private static HashSet<Color> GetColors(SvgDocument svg)
@@ -92,8 +92,11 @@ internal static class ColorsCommand
 				case DxfLwPolyline lwPolyLine:
 					acc.Add(Color.FromArgb(lwPolyLine.Color.ToRGB()));
 					break;
-				default:
+				case DxfLine line:
+					acc.Add(Color.FromArgb(line.Color.ToRGB()));
 					break;
+				default:
+					throw new NotImplementedException($"Entity type {cur.GetType().Name} not yet implemented.");
 			}
 			return acc;
 		});
