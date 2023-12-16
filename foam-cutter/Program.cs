@@ -1,8 +1,5 @@
 ﻿using System.CommandLine;
-using System.Drawing;
 using FoamCutter.Commands;
-using FoamCutter.Machine;
-using FoamCutter.Paths;
 using IxMilia.Dxf;
 using IxMilia.Dxf.Entities;
 using Svg;
@@ -23,6 +20,7 @@ public class Program
 
 		var rootCommand = new RootCommand("G-CODE generation tool for the MPCNC foam (needle) cutter") {
 			ColorsCommand.GetCommand(),
+			GenerateCommand.GetCommand(),
 		};
 
 		rootCommand.SetHandler(() => {
@@ -36,41 +34,6 @@ public class Program
 	{
 		//PathBuilder.DrawTheArc();
 		//return;
-		//var fn  = @"C:\Users\markparker\OneDrive\RC Stuff\Flite Test bits\tiny_trainer1_inkscapeconv_translated.svg";
-		var fn = @"C:\Users\MarkParker\Downloads\minnie_ear.dxf";
-
-		var paths = ReadPaths(fn);
-		var minX  = float.MaxValue;
-		var minY  = float.MaxValue;
-		var maxX  = float.MinValue;
-		var maxY  = float.MinValue;
-
-		Console.WriteLine($"{paths.Count} paths generated totalling {paths.Sum(p => p.Points.Count())} points.");
-
-		foreach (var point in paths.SelectMany(p => p.Points)) {
-			minX = Math.Min(minX, point.X);
-			minY = Math.Min(minY, point.Y);
-			maxX = Math.Max(maxX, point.X);
-			maxY = Math.Max(maxY, point.Y);
-		}
-
-		var config = new Config() {
-			TravelSpeed  = 6000, // feed rate (in mm/min) used for travel moves (which are G1)
-			CuttingSpeed = 600,  // feed rate (in mm/min) used for cut/score moves (which are G0)
-			PlungeSpeed  = 150,  // feed rate (in mm/min) used for plunge moves (which are G0)
-			RetractSpeed = 1500, // feed rate (in mm/min) used for retract moves (which are G1)
-			Translation  = new PointF(-minX, -minY),
-			CuttingDepth = 0,  // cutting happens at "full" depth, meaning the machine should be homed such that Z=0 engages the cutter fully through the workpiece
-			ScoringDepth = 19, // THIS DISABLES SCORING (because scoring will happen at nearly the travel depth, where no cutting will occur)
-			TravelDepth  = 20, // this is the safe height, where rapid moves can occur without dragging the cutter through the workpiece
-		};
-
-		Console.WriteLine($"Minimum X,Y coordinate: {minX},{minY}");
-		Console.WriteLine($"Maximum X,Y coordinate: {maxX},{maxY}");
-		Console.WriteLine($"Translation: {config.Translation}");
-
-		using var of = File.CreateText("minnie_ear_dxf.gcode");
-		BuildCode(paths, config, of);
 
 		//ScaleSvg(svg, 0.1f); // first scale was 0.3080243484622777673631323069921f, then it was still 10x; so I scaled by .1... should've been 0.0308... the first time?
 
@@ -91,82 +54,6 @@ public class Program
 		// 		}
 		// 	}
 		// });
-	}
-
-	private static List<MachinePath> ReadPaths(string filename) => System.IO.Path.GetExtension(filename) switch {
-			".dxf" => PathBuilder.BuildPaths(DxfFile.Load(filename)),
-			".svg" => PathBuilder.BuildPaths(SvgDocument.Open(filename)),
-			_ => throw new NotSupportedException($"The specified extension is not supported: {System.IO.Path.GetExtension(filename)}"),
-		};
-
-	private static void BuildCode(IEnumerable<MachinePath> paths, Config config, TextWriter output)
-	{
-		static void EmitMove(float toX, float toY, float toZ, State state, Config config, TextWriter output)
-		{
-			if (state.AtCoordinates(toX, toY, toZ)) {
-				return;
-			}
-
-			if (toZ != state.Z) {
-				if (toX != state.X || toY != state.Y) {
-					throw new InvalidOperationException("Cannot combine X-Y and Z moves in a single command");
-				}
-
-				if (toZ > state.Z) {
-					output.WriteLine($"G0 Z{toZ:F2} F{config.RetractSpeed}");
-				} else {
-					output.WriteLine($"G1 Z{toZ:F2} F{config.PlungeSpeed}");
-				}
-			} else {
-				if (state.CuttingOrScoring) {
-					output.WriteLine($"G1 X{toX + config.Translation.X:F2} Y{toY + config.Translation.Y:F2} F{config.CuttingSpeed}");
-				} else {
-					output.WriteLine($"G0 X{toX + config.Translation.X:F2} Y{toY + config.Translation.Y:F2} F{config.TravelSpeed}");
-				}
-			}
-
-			state.X = toX;
-			state.Y = toY;
-			state.Z = toZ;
-		}
-
-		static void GenerateMoves(IEnumerable<MachinePath> paths, State state, float cutDepth, Config config, TextWriter output)
-		{
-			foreach (var path in paths) {
-				// travel to the initial point in the path
-				if (!state.AtCoordinates(path.First.X, path.First.Y)) {
-					if (state.CuttingOrScoring) {
-						// retract the cutter
-						EmitMove(state.X, state.Y, config.TravelDepth, state, config, output);
-					}
-
-					// move to the initial point
-					EmitMove(path.First.X, path.First.Y, config.TravelDepth, state, config, output);
-				}
-
-				// plunge to the correct depth
-				EmitMove(state.X, state.Y, cutDepth, state, config, output);
-
-				// move to each subsequent point
-				foreach (var point in path.Points.Skip(1)) {
-					EmitMove(point.X, point.Y, cutDepth, state, config, output);
-				}
-			}
-		}
-
-		var state = new State(config);
-
-		// step ZERO is to configure the machine
-		output.WriteLine("G90"); // configure for absolute coordinates
-
-		// step ONE is to move the Z axis to the travel coordinate
-		EmitMove(state.X, state.Y, config.TravelDepth, state, config, output);
-
-		GenerateMoves(paths.Where(p => p.SegmentType == SegmentType.Score), state, config.ScoringDepth, config, output);
-		GenerateMoves(paths.Where(p => p.SegmentType == SegmentType.Cut),   state, config.CuttingDepth, config, output);
-
-		// step LAST is to move the Z axis to the travel coordinate
-		EmitMove(state.X, state.Y, config.TravelDepth, state, config, output);
 	}
 
 	private static void ScaleSvg(SvgDocument svg, float scaleFactor)

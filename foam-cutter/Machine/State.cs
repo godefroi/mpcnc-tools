@@ -17,6 +17,8 @@ public class State
 
 	public float Z { get; set; }
 
+	public CoordinateMode MovementMode { get; set; }
+
 	public bool Cutting => CoordinateEquals(Z, _config.CuttingDepth);
 
 	public bool Scoring => CoordinateEquals(Z, _config.ScoringDepth);
@@ -28,4 +30,10 @@ public class State
 	public bool AtCoordinates(float x, float y, float z) => CoordinateEquals(X, x) && CoordinateEquals(Y, y) && CoordinateEquals(Z, z);
 
 	private static bool CoordinateEquals(float a, float b) => Math.Abs(a - b) <= COMPARISON_PRECISION;
+}
+
+public enum CoordinateMode
+{
+	Absolute,
+	Relative,
 }

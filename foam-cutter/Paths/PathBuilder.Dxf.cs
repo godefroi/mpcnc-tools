@@ -1,4 +1,5 @@
 using System.Drawing;
+using FoamCutter.Machine;
 using IxMilia.Dxf;
 using IxMilia.Dxf.Entities;
 using SkiaSharp;
@@ -77,29 +78,47 @@ public partial class PathBuilder
 		bitmap.Encode(fs, SKEncodedImageFormat.Png, 100);
 	}
 
-	private static IEnumerable<MachinePath> GetPaths(DxfFile dxf)
+	private static IEnumerable<MachinePath> GetPaths(DxfFile dxf, Config config)
 	{
 		foreach (var entity in dxf.Entities) {
-			foreach (var path in GetPaths(entity)) {
+			foreach (var path in GetPaths(entity, config)) {
 				yield return path;
 			}
 		}
 	}
 
-	private static IEnumerable<MachinePath> GetPaths(DxfEntity entity)
+	private static IEnumerable<MachinePath> GetPaths(DxfEntity entity, Config config)
 	{
+		var segmentType = config.GetSegmentType(new RgbColor(entity.Color));
+
+//Console.WriteLine($"derived segment type: {segmentType}");
+
+		if (segmentType == SegmentType.Ignore) {
+			yield break;
+		}
+
 		switch (entity) {
 			case DxfArc arc:
-				yield return ExpandArc(arc);
+				yield return ExpandArc(arc, segmentType);
 				break;
-			case DxfLwPolyline lwPolyLine:
-				foreach (var plEntity in lwPolyLine.AsSimpleEntities()) {
-					foreach (var se in GetPaths(plEntity).Where(e => e != null)) {
+			case DxfLwPolyline lwPolyline:
+				foreach (var plEntity in lwPolyline.AsSimpleEntities()) {
+					foreach (var se in GetPaths(plEntity, config).Where(e => e != null)) {
+						yield return se;
+					}
+				}
+				break;
+			case DxfPolyline polyline:
+				foreach (var plEntity in polyline.AsSimpleEntities()) {
+					foreach (var se in GetPaths(plEntity, config).Where(e => e != null)) {
 						yield return se;
 					}
 				}
 				break;
 			case DxfLine line:
+				yield return new MachinePath(segmentType, MakePoint(line.P1, 3), MakePoint(line.P2, 3));
+				break;
+			case DxfSpline spline:
 			default:
 				throw new NotImplementedException($"Building paths for element type {entity.GetType().Name} ({entity.EntityType}) is not yet implemented.");
 		}
@@ -150,17 +169,17 @@ public partial class PathBuilder
 		return spath;
 	}
 
-	private static MachinePath ExpandArc(DxfArc arc)
+	private static MachinePath ExpandArc(DxfArc arc, SegmentType segmentType)
 	{
 		// for an arc, 0 degrees is in the +X direction, increasing in a CCW rotation
 		var circumference = 2 * Math.PI * arc.Radius;
 		var sweep         = CalculateSweep(arc);
 		var length        = circumference * (sweep / 360d);
-		var spath         = new MachinePath(SegmentType.Cut, MakePoint(arc.GetPointFromAngle(arc.StartAngle), 3)); // TODO: figure out the right segment type
+		var spath         = new MachinePath(segmentType, MakePoint(arc.GetPointFromAngle(arc.StartAngle), 3)); // TODO: figure out the right segment type
 		var step          = sweep / Math.Min(sweep, length); // step is min 1 degree, up to 1 per mm
-		Console.WriteLine($"LineTypeName: {arc.LineTypeName} StartAngle: {arc.StartAngle:f3} EndAngle: {arc.EndAngle:f3}");
-		Console.WriteLine($"  start point: {arc.GetPointFromAngle(arc.StartAngle).Round()} end point: {arc.GetPointFromAngle(arc.EndAngle).Round()}");
-		Console.WriteLine($"  circumference: {circumference:f3} sweep: {sweep:f3} length: {length:f3} step: {step:f3}");
+		// Console.WriteLine($"LineTypeName: {arc.LineTypeName} StartAngle: {arc.StartAngle:f3} EndAngle: {arc.EndAngle:f3}");
+		// Console.WriteLine($"  start point: {arc.GetPointFromAngle(arc.StartAngle).Round()} end point: {arc.GetPointFromAngle(arc.EndAngle).Round()}");
+		// Console.WriteLine($"  circumference: {circumference:f3} sweep: {sweep:f3} length: {length:f3} step: {step:f3}");
 
 		var angle = arc.StartAngle;
 		while (arc.ContainsAngle(angle)) {
@@ -170,7 +189,7 @@ public partial class PathBuilder
 
 		spath.Append(MakePoint(arc.GetPointFromAngle(arc.EndAngle), 3));
 
-		Console.WriteLine($"Made a path with {spath.Points.Count()} points");
+		//Console.WriteLine($"Made a path with {spath.Points.Count()} points");
 
 		return spath;
 	}

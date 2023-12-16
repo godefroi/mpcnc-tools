@@ -1,12 +1,14 @@
 using System.Drawing;
+using FoamCutter.Machine;
 using Svg;
 
 namespace FoamCutter.Paths;
 
 public partial class PathBuilder
 {
-	private static List<MachinePath> GetPaths(SvgDocument svg)
+	private static List<MachinePath> GetPaths(SvgDocument svg, Config config)
 	{
+		throw new NotImplementedException("Can't do that, Dave. Gotta fix the segment type thing like we did for DXF.");
 		var paths = new List<MachinePath>();
 
 		svg.ApplyRecursive(elem => {

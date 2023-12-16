@@ -4,6 +4,7 @@ namespace FoamCutter.Paths;
 
 public enum SegmentType
 {
+	Ignore,
 	Cut,
 	Score,
 }
@@ -18,6 +19,12 @@ public class MachinePath
 		_points     = new() {
             start
         };
+	}
+
+	public MachinePath(SegmentType segmentType, params PointF[] points)
+	{
+		SegmentType = segmentType;
+		_points     = new(points);
 	}
 
 	public MachinePath(SegmentType segmentType, IEnumerable<PointF> points)
