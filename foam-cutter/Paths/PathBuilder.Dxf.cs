@@ -19,9 +19,9 @@ public partial class PathBuilder
 		var length        = circumference * (sweep / 360d);
 		var spath         = new MachinePath(SegmentType.Cut, MakePoint(arc.GetPointFromAngle(arc.StartAngle), 3)); // TODO: figure out the right segment type
 		var step          = sweep / Math.Min(sweep, length); // step is min 1 degree, up to 1 per mm
-		Console.WriteLine($"LineTypeName: {arc.LineTypeName} StartAngle: {arc.StartAngle:f3} EndAngle: {arc.EndAngle:f3}");
-		Console.WriteLine($"  start point: {arc.GetPointFromAngle(arc.StartAngle).Round()} end point: {arc.GetPointFromAngle(arc.EndAngle).Round()}");
-		Console.WriteLine($"  circumference: {circumference:f3} sweep: {sweep:f3} length: {length:f3} step: {step:f3}");
+		// Console.WriteLine($"LineTypeName: {arc.LineTypeName} StartAngle: {arc.StartAngle:f3} EndAngle: {arc.EndAngle:f3}");
+		// Console.WriteLine($"  start point: {arc.GetPointFromAngle(arc.StartAngle).Round()} end point: {arc.GetPointFromAngle(arc.EndAngle).Round()}");
+		// Console.WriteLine($"  circumference: {circumference:f3} sweep: {sweep:f3} length: {length:f3} step: {step:f3}");
 
 		var points = new List<PointF>();
 
@@ -132,9 +132,9 @@ public partial class PathBuilder
 		var length        = circumference * (sweep / 360d);
 		var spath         = new MachinePath(SegmentType.Cut, MakePoint(arc.GetPointFromAngle(arc.StartAngle), 3)); // TODO: figure out the right segment type
 		var step          = sweep / Math.Min(sweep, length); // step is min 1 degree, up to 1 per mm
-		Console.WriteLine($"LineTypeName: {arc.LineTypeName} StartAngle: {arc.StartAngle:f3} EndAngle: {arc.EndAngle:f3}");
-		Console.WriteLine($"  start point: {arc.GetPointFromAngle(arc.StartAngle).Round()} end point: {arc.GetPointFromAngle(arc.EndAngle).Round()}");
-		Console.WriteLine($"  circumference: {circumference:f3} sweep: {sweep:f3} length: {length:f3} step: {step:f3}");
+		// Console.WriteLine($"LineTypeName: {arc.LineTypeName} StartAngle: {arc.StartAngle:f3} EndAngle: {arc.EndAngle:f3}");
+		// Console.WriteLine($"  start point: {arc.GetPointFromAngle(arc.StartAngle).Round()} end point: {arc.GetPointFromAngle(arc.EndAngle).Round()}");
+		// Console.WriteLine($"  circumference: {circumference:f3} sweep: {sweep:f3} length: {length:f3} step: {step:f3}");
 
 		// if (Math.Round(arc.StartAngle) != 299) {
 		// 	Console.WriteLine("skipping.");
@@ -197,9 +197,4 @@ public partial class PathBuilder
 	private static PointF MakePoint(DxfPoint point, int decimalPlaces) => new((float)Math.Round(point.X, decimalPlaces), (float)Math.Round(point.Y, decimalPlaces));
 
 	private static double CalculateSweep(DxfArc arc) => arc.EndAngle > arc.StartAngle ? arc.EndAngle - arc.StartAngle : 360d - arc.StartAngle + arc.EndAngle;
-}
-
-file static class DxfPointExtensions
-{
-	public static DxfPoint Round(this DxfPoint point, int digits = 3) => new(Math.Round(point.X, digits), Math.Round(point.Y, digits), Math.Round(point.Z, digits));
 }

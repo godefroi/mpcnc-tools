@@ -21,47 +21,35 @@ internal static class ColorsCommand
 
 	private async static Task Execute(FileInfo inputFile)
 	{
-		//DxfColor.FromRawValue()
 		if (!inputFile.Exists) {
 			throw new FileNotFoundException("The specified input file was not found.", inputFile.FullName);
 		}
 
-		switch (inputFile.Extension) {
-			case ".svg":
-				ListColors(GetColors(SvgDocument.Open(inputFile.FullName)));
-				break;
-			case ".dxf":
-				ListColors(GetColors(DxfFile.Load(inputFile.FullName)));
-				break;
-		}
+		ListColors(inputFile.Extension switch {
+			".svg" => GetColors(SvgDocument.Open(inputFile.FullName)),
+			".dxf" => GetColors(DxfFile.Load(inputFile.FullName)),
+			_ => throw new InvalidOperationException("Only DXF and SVG files are supported."),
+		});
 
 		await Task.CompletedTask;
 	}
 
-	private static void ListColors(HashSet<Color> colors)
+	private static void ListColors(HashSet<RgbColor> colors)
 	{
-		var colorDict = typeof(Color)
-			.GetProperties(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public)
-			.Where(pi => pi.PropertyType == typeof(Color))
-			.Select(pi => pi.GetValue(null))
-			.OfType<Color>()
-			.DistinctBy(c => c.ToArgb())
-			.ToDictionary(c => c.ToArgb(), c => c.Name);
-
 		Console.WriteLine("Colors:");
 
 		foreach (var color in colors) {
-			if (colorDict.TryGetValue(color.ToArgb(), out var value)) {
-				Console.WriteLine($"  {value}");
+			if (!string.IsNullOrWhiteSpace(color.Name)) {
+				Console.WriteLine($"{color.Name} [R={color.R}, G={color.G}, B={color.B}]");
 			} else {
-				Console.WriteLine($"  [A={color.A}, R={color.R}, G={color.G}, B={color.B}]");
+				Console.WriteLine($"[R={color.R}, G={color.G}, B={color.B}]");
 			}
 		}
 	}
 
-	private static HashSet<Color> GetColors(SvgDocument svg)
+	private static HashSet<RgbColor> GetColors(SvgDocument svg)
 	{
-		var colors = new HashSet<Color>();
+		var colors = new HashSet<RgbColor>();
 
 		svg.ApplyRecursive(elem => {
 			switch (elem) {
@@ -71,7 +59,7 @@ internal static class ColorsCommand
 					break;
 				case SvgPath path:
 					if (elem.Stroke != null && elem.Stroke is SvgColourServer colourServer) {
-						colors.Add(Color.FromArgb(colourServer.Colour.ToArgb()));
+						colors.Add(new RgbColor(colourServer.Colour.ToArgb()));
 					}
 					break;
 				default:
@@ -82,23 +70,14 @@ internal static class ColorsCommand
 		return colors;
 	}
 
-	private static HashSet<Color> GetColors(DxfFile dxf)
+	private static HashSet<RgbColor> GetColors(DxfFile dxf)
 	{
-		return dxf.Entities.Aggregate(new HashSet<Color>(), (acc, cur) => {
-			switch (cur) {
-				case DxfArc arc:
-					acc.Add(Color.FromArgb(arc.Color.ToRGB()));
-					break;
-				case DxfLwPolyline lwPolyLine:
-					acc.Add(Color.FromArgb(lwPolyLine.Color.ToRGB()));
-					break;
-				case DxfLine line:
-					acc.Add(Color.FromArgb(line.Color.ToRGB()));
-					break;
-				default:
-					throw new NotImplementedException($"Entity type {cur.GetType().Name} not yet implemented.");
-			}
-			return acc;
-		});
+		return dxf.Entities.Aggregate(new HashSet<RgbColor>(), (acc, cur) => { acc.Add(cur switch {
+			DxfArc arc => new RgbColor(arc.Color),
+			DxfLwPolyline lwPolyline => new RgbColor(lwPolyline.Color),
+			DxfPolyline polyline => new RgbColor(polyline.Color),
+			DxfLine line => new RgbColor(line.Color),
+			_ => throw new NotImplementedException($"Entity type {cur.GetType().Name} not yet implemented."),
+		}); return acc; });
 	}
 }
