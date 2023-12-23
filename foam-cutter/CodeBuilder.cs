@@ -42,10 +42,10 @@ public static class CodeBuilder
 		output.WriteLine($"; finishing up; I think we're at [{state.X},{state.Y}]");
 		// step LAST is to move us back to where we started
 		//Console.WriteLine($"we are now at [{state.X},{state.Y}]");
-		EmitMove((float)Math.Round(-config.Translation.X, 2), (float)Math.Round(-config.Translation.Y, 2), state.Z, state, config, output, "return to starting coordinates");
+		EmitMove(-config.Translation.X, -config.Translation.Y, state.Z, state, config, output, "return to starting coordinates");
 	}
 
-	private static void EmitMove(float toX, float toY, float toZ, State state, Config config, TextWriter output, string? comment = null)
+	private static void EmitMove(decimal toX, decimal toY, decimal toZ, State state, Config config, TextWriter output, string? comment = null)
 	{
 		if (state.AtCoordinates(toX, toY, toZ)) {
 			return;
@@ -75,8 +75,8 @@ public static class CodeBuilder
 			//   where our path is sending us to (untranslated coordinates) are toX and toY
 			//   how much we want to move is simply the difference, because we're doing rel moves
 
-			var xMove = Math.Round(toX - state.X, 2);
-			var yMove = Math.Round(toY - state.Y, 2);
+			var xMove = toX - state.X;
+			var yMove = toY - state.Y;
 
 			//Console.WriteLine($"Relative move; we're at [{state.X},{state.Y}], moving to [{toX},{toY}] -> X{xMove:F2} Y{yMove:F2}");
 			//Console.WriteLine($"\trel move would be X{state.X - toX} Y{state.Y - toY}");
@@ -108,7 +108,7 @@ public static class CodeBuilder
 		state.MovementMode = coordinateMode;
 	}
 
-	private static void GenerateMoves(IEnumerable<MachinePath> paths, State state, float cutDepth, Config config, TextWriter output)
+	private static void GenerateMoves(IEnumerable<MachinePath> paths, State state, decimal cutDepth, Config config, TextWriter output)
 	{
 		foreach (var path in paths) {
 			// travel to the initial point in the path

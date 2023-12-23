@@ -9,7 +9,7 @@ internal static class Options
 
 	public static readonly Option<List<string>> CutColors = new("--cut-color", "Cut color");
 
-	public static readonly Option<float?> TranslationX = new("--translation-x", "X-axis translation override");
+	public static readonly Option<decimal?> TranslationX = new("--translation-x", "X-axis translation override");
 
-	public static readonly Option<float?> TranslationY = new("--translation-y", "Y-axis translation override");
+	public static readonly Option<decimal?> TranslationY = new("--translation-y", "Y-axis translation override");
 }

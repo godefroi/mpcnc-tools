@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Drawing;
 using FoamCutter.Machine;
 using FoamCutter.Paths;
 using IxMilia.Dxf;
@@ -23,7 +22,7 @@ internal static class GenerateCommand
 		return command;
 	}
 
-	private async static Task Execute(FileInfo inputFile, float? translationX, float? translationY, List<string> cutColors)
+	private async static Task Execute(FileInfo inputFile, decimal? translationX, decimal? translationY, List<string> cutColors)
 	{
 		if (!inputFile.Exists) {
 			throw new FileNotFoundException("The specified input file was not found.", inputFile.FullName);
@@ -37,7 +36,7 @@ internal static class GenerateCommand
 			CuttingSpeed = 900,  // feed rate (in mm/min) used for cut/score moves (which are G0)
 			PlungeSpeed  = 1500, // feed rate (in mm/min) used for plunge moves (which are G0)
 			RetractSpeed = 1500, // feed rate (in mm/min) used for retract moves (which are G1)
-			Translation  = new PointF(0, 0),
+			Translation  = new Point(0, 0),
 			CuttingDepth = 0,  // cutting happens at "full" depth, meaning the machine should be homed such that Z=0 engages the cutter fully through the workpiece
 			ScoringDepth = 19, // THIS DISABLES SCORING (because scoring will happen at nearly the travel depth, where no cutting will occur)
 			TravelDepth  = 20, // this is the safe height, where rapid moves can occur without dragging the cutter through the workpiece
@@ -51,10 +50,10 @@ internal static class GenerateCommand
 		//config.AddCutColor(new RgbColor(Color.Aqua));
 
 		var paths = ReadPaths(inputFile.FullName, config);
-		var minX  = float.MaxValue;
-		var minY  = float.MaxValue;
-		var maxX  = float.MinValue;
-		var maxY  = float.MinValue;
+		var minX  = decimal.MaxValue;
+		var minY  = decimal.MaxValue;
+		var maxX  = decimal.MinValue;
+		var maxY  = decimal.MinValue;
 
 		Console.WriteLine($"{paths.Count} paths generated totalling {paths.Sum(p => p.Points.Count())} points.");
 
@@ -65,14 +64,14 @@ internal static class GenerateCommand
 			maxY = Math.Max(maxY, point.Y);
 		}
 
-		config.Translation = new PointF(-minX, -minY);
+		config.Translation = new Point(-minX, -minY);
 
 		if (translationX.HasValue) {
-			config.Translation = new PointF(translationX.Value, config.Translation.Y);
+			config.Translation = new Point(translationX.Value, config.Translation.Y);
 		}
 
 		if (translationY.HasValue) {
-			config.Translation = new PointF(config.Translation.X, translationY.Value);
+			config.Translation = new Point(config.Translation.X, translationY.Value);
 		}
 
 		Console.WriteLine($"Minimum X,Y coordinate: {minX},{minY}");

@@ -1,4 +1,3 @@
-using System.Drawing;
 using FoamCutter.Paths;
 
 namespace FoamCutter.Machine;
@@ -8,11 +7,11 @@ public class Config
 	private HashSet<RgbColor> _cutColors = [];
 	private HashSet<RgbColor> _scoreColors = [];
 
-	public float CuttingDepth { get; set; }
+	public decimal CuttingDepth { get; set; }
 
-	public float TravelDepth { get; set; }
+	public decimal TravelDepth { get; set; }
 
-	public float ScoringDepth { get; set; }
+	public decimal ScoringDepth { get; set; }
 
 	public int TravelSpeed { get; set; }
 
@@ -22,7 +21,7 @@ public class Config
 
 	public int RetractSpeed { get; set; }
 
-	public PointF Translation { get; set; }
+	public Point Translation { get; set; }
 
 	public IReadOnlySet<RgbColor> CutColors => _cutColors;
 
