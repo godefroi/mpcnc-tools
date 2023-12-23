@@ -102,7 +102,7 @@ public static class CodeBuilder
 		output.WriteLine(coordinateMode switch {
 			CoordinateMode.Absolute => "G90",
 			CoordinateMode.Relative => "G91",
-			_ => throw new InvalidOperationException("Inableid coordinate mode specified."),
+			_ => throw new InvalidOperationException("Invalid coordinate mode specified."),
 		});
 
 		state.MovementMode = coordinateMode;

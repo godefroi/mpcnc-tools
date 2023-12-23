@@ -40,7 +40,7 @@ public partial class PathBuilder
 				var path2 = paths[j];
 
 				if (path1.Append(path2)) {
-					Console.WriteLine("Consolidated a path");
+					//Console.WriteLine("Consolidated a path");
 					paths.RemoveAt(j);
 					return true;
 				}

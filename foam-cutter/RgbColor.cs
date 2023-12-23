@@ -58,9 +58,19 @@ public partial record class RgbColor
 			return foundColor.Key;
 		}
 
+		var reMatch = GetRgbRegex().Match(color);
+
+		if (reMatch.Success) {
+			var r = int.Parse(reMatch.Groups["r"].ValueSpan);
+			var g = int.Parse(reMatch.Groups["g"].ValueSpan);
+			var b = int.Parse(reMatch.Groups["b"].ValueSpan);
+
+			return SystemDrawingColor.FromArgb(r, g, b).ToArgb();
+		}
+
 		throw new InvalidOperationException($"Unknown color: {color}");
 	}
 
 	[GeneratedRegex(@"\[R=(?<r>\d{1,3}), G=(?<g>\d{1,3}), B=(?<b>\d{1,3})\]")]
-	private partial Regex GetRgbRegex();
+	private static partial Regex GetRgbRegex();
 }
