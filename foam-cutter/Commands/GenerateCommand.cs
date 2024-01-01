@@ -12,21 +12,26 @@ internal static class GenerateCommand
 	{
 		var command = new Command("generate", "generate GCODE for a given input file") {
 			Options.InputFile,
+			Options.OutputFile,
 			Options.TranslationX,
 			Options.TranslationY,
 			Options.CutColors,
+			Options.ScoreColors,
+			Options.IncludeGroups,
 		};
 
-		command.SetHandler(Execute, Options.InputFile, Options.TranslationX, Options.TranslationY, Options.CutColors);
+		command.SetHandler(Execute, Options.InputFile, Options.OutputFile, Options.TranslationX, Options.TranslationY, Options.CutColors, Options.ScoreColors, Options.IncludeGroups);
 
 		return command;
 	}
 
-	private async static Task Execute(FileInfo inputFile, decimal? translationX, decimal? translationY, List<string> cutColors)
+	private async static Task Execute(FileInfo inputFile, FileInfo? outputFile, decimal? translationX, decimal? translationY, List<string> cutColors, List<string> scoreColors, List<string> includeGroups)
 	{
 		if (!inputFile.Exists) {
 			throw new FileNotFoundException("The specified input file was not found.", inputFile.FullName);
 		}
+
+		outputFile ??= new FileInfo(Path.ChangeExtension(inputFile.Name, "gcode"));
 
 		//var fn  = @"C:\Users\markparker\OneDrive\RC Stuff\Flite Test bits\tiny_trainer1_inkscapeconv_translated.svg";
 		//var fn = @"C:\Users\MarkParker\Downloads\minnie_ear.dxf";
@@ -38,7 +43,7 @@ internal static class GenerateCommand
 			RetractSpeed = 1500, // feed rate (in mm/min) used for retract moves (which are G1)
 			Translation  = new Point(0, 0),
 			CuttingDepth = 0,  // cutting happens at "full" depth, meaning the machine should be homed such that Z=0 engages the cutter fully through the workpiece
-			ScoringDepth = 19, // THIS DISABLES SCORING (because scoring will happen at nearly the travel depth, where no cutting will occur)
+			ScoringDepth = 5,  // score at 5mm... which will cut the top paper (at home, at least) but not go deeper. 4mm could be better?
 			TravelDepth  = 20, // this is the safe height, where rapid moves can occur without dragging the cutter through the workpiece
 		};
 
@@ -46,8 +51,13 @@ internal static class GenerateCommand
 			config.AddCutColor(new RgbColor(color));
 		}
 
-		//config.AddCutColor(new RgbColor(Color.Black));
-		//config.AddCutColor(new RgbColor(Color.Aqua));
+		foreach (var color in scoreColors) {
+			config.AddScoreColor(new RgbColor(color));
+		}
+
+		foreach (var group in includeGroups) {
+			config.AddGroupName(group);
+		}
 
 		var paths = ReadPaths(inputFile.FullName, config);
 		var minX  = decimal.MaxValue;
@@ -78,7 +88,7 @@ internal static class GenerateCommand
 		Console.WriteLine($"Maximum X,Y coordinate: {maxX},{maxY}");
 		Console.WriteLine($"Translation: {config.Translation}");
 
-		using var of = File.CreateText(Path.ChangeExtension(inputFile.Name, "gcode"));
+		using var of = File.CreateText(outputFile.FullName);
 
 		CodeBuilder.BuildCode(paths, config, of);
 

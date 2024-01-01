@@ -39,6 +39,8 @@ public class MachinePath
 
 	public IEnumerable<Point> Points => _points;
 
+	public void Reverse() => _points.Reverse();
+
 	public void Append(PointF point) => _points.Add(new Point(point));
 
 	public void Append(Point point) => _points.Add(point);
@@ -74,22 +76,17 @@ public class MachinePath
 		} else if (path.Last == Last) {
 			// the new path ends where this path ends; reverse the incoming path and append it
 			_points.EnsureCapacity(_points.Count + path._points.Count - 1);
-			_points.AddRange(Invert(path._points).Skip(1));
+			path.Reverse();
+			_points.AddRange(path._points.Skip(1));
 			return true;
 		} else if (path.First == First) {
 			// the new path starts where this path starts; reverse the incoming path and prepend it
 			_points.EnsureCapacity(_points.Count + path._points.Count - 1);
-			_points.InsertRange(0, Invert(path._points).SkipLast(1));
+			path.Reverse();
+			_points.InsertRange(0, path._points.SkipLast(1));
 			return true;
 		} else {
 			return false;
-		}
-	}
-
-	private static IEnumerable<Point> Invert(List<Point> points)
-	{
-		for (var i = points.Count - 1; i >= 0; i--) {
-			yield return points[i];
 		}
 	}
 

@@ -8,11 +8,10 @@ public partial class PathBuilder
 {
 	private static List<MachinePath> GetPaths(SvgDocument svg, Config config)
 	{
-		throw new NotImplementedException("Can't do that, Dave. Gotta fix the segment type thing like we did for DXF.");
 		var paths = new List<MachinePath>();
 
 		svg.ApplyRecursive(elem => {
-			foreach (var path in GetPaths(elem)) {
+			foreach (var path in GetPaths(elem, config)) {
 				paths.Add(path);
 			}
 		});
@@ -20,15 +19,33 @@ public partial class PathBuilder
 		return paths;
 	}
 
-	private static IEnumerable<MachinePath> GetPaths(SvgElement element)
+	private static IEnumerable<MachinePath> GetPaths(SvgElement element, Config config)
 	{
+		if (element.Stroke is not SvgColourServer strokeServer) {
+			//throw new InvalidOperationException($"element {element.GetType().Name} stroke is not a colour server");
+			// if the element doesn't have a color, we'll just skip it
+			yield break;
+		}
+
+		var segmentType = config.GetSegmentType(new RgbColor(strokeServer.Colour));
+
+		// if this segment isn't one we're going to use, we can skip the rest of this
+		if (segmentType == SegmentType.Ignore) {
+			yield break;
+		}
+
+		// if this element is not included based on group name, bail here
+		if (!config.GroupsInclude(element.Parents.OfType<SvgGroup>().Select(g => g.ID))) {
+			yield break;
+		}
+
 		switch (element) {
 			case SvgDocument doc: // ignore
 			case SvgDescription desc: // ignore
 			case SvgGroup group: // ignore
 				break;
 			case SvgPath path:
-				var newPath = ExpandPath(path.PathData, SegmentType.Cut); // TODO: figure out the right segment type
+				var newPath = ExpandPath(path.PathData, segmentType);
 
 				// find a path in our list that connects with this path
 				if (newPath != null) {

@@ -53,6 +53,8 @@ internal static class ColorsCommand
 
 		svg.ApplyRecursive(elem => {
 			switch (elem) {
+				case NonSvgElement nonSvg: // ignore
+				case SvgDefinitionList defs: // ignore
 				case SvgDocument doc: // ignore
 				case SvgDescription desc: // ignore these
 				case SvgGroup group: // ignore these (the groupings in the source seem arbitrary)

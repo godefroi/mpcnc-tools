@@ -9,6 +9,8 @@ public static class CodeBuilder
 	{
 		var state = new State(config);
 
+		// give ourselves a little extra buffer (i.e. +translation) as a defense against rounding error?
+
 		// step ZERO is to configure the machine
 		output.WriteLine("G90"); // configure for absolute coordinates
 		state.MovementMode = CoordinateMode.Absolute;
@@ -25,15 +27,11 @@ public static class CodeBuilder
 		EmitMove(state.X, state.Y, config.TravelDepth, state, config, output);
 
 		// // step TWO is to adjust for our translation (all moves are relative, so we only do this once)
-		// EmitMove(config.Translation.X, config.Translation.Y, state.Z, state, config, output, "moving to the translation coordinate");
-		// output.WriteLine($"                             ; machine state coordinates reset to [0,0]");
-		// state.X = 0;
-		// state.Y = 0;
 		state.X = -config.Translation.X;
 		state.Y = -config.Translation.Y;
 		output.WriteLine($"                             ; machine state coordinates reset to [{state.X},{state.Y}]");
 
-		//GenerateMoves(paths.Where(p => p.SegmentType == SegmentType.Score), state, config.ScoringDepth, config, output);
+		GenerateMoves(paths.Where(p => p.SegmentType == SegmentType.Score), state, config.ScoringDepth, config, output);
 		GenerateMoves(paths.Where(p => p.SegmentType == SegmentType.Cut),   state, config.CuttingDepth, config, output);
 
 		// step PENULTIMATE is to move the Z axis to the travel coordinate
@@ -110,7 +108,32 @@ public static class CodeBuilder
 
 	private static void GenerateMoves(IEnumerable<MachinePath> paths, State state, decimal cutDepth, Config config, TextWriter output)
 	{
-		foreach (var path in paths) {
+		var pendingPaths = paths.ToList();
+		var currentPos   = -config.Translation;
+		var pnum         = 0;
+		var pcnt         = pendingPaths.Count;
+
+		while (pendingPaths.Count > 0) {
+			// find the next path
+			var (path, inverted, travel) = FindClosestPath(currentPos, pendingPaths);
+
+			// remove the path from the list of pending paths
+			pendingPaths.Remove(path);
+
+			// invert the path if necessary
+			if (inverted) {
+				path.Reverse();
+			}
+
+			// update our current location from the last point in the path
+			currentPos = path.Last;
+
+			// give our gcode a bit of context
+			output.WriteLine($"                             ; beginning new path at [{path.First.X},{path.First.Y}] ({(inverted ? "inverted" : "non-inverted")}) requiring travel of {travel:0.00}");
+			output.WriteLine($"                             ; this is path {++pnum}, {pendingPaths.Count} remain");
+			output.WriteLine($"                             ; this path begins at [{path.First.X},{path.First.Y}] and ends at [{path.Last.X},{path.Last.Y}]");
+			output.WriteLine($"M117 Path {pnum}/{pcnt}");
+
 			// travel to the initial point in the path
 			if (!state.AtCoordinates(path.First.X, path.First.Y)) {
 				if (state.CuttingOrScoring) {
@@ -130,5 +153,31 @@ public static class CodeBuilder
 				EmitMove(point.X, point.Y, cutDepth, state, config, output);
 			}
 		}
+	}
+
+	private static (MachinePath Path, bool Inverted, double Travel) FindClosestPath(Point currentPosition, IEnumerable<MachinePath> paths)
+	{
+		var minPath  = new MachinePath(SegmentType.Ignore);
+		var curDist  = double.MaxValue;
+		var inverted = false;
+
+		foreach (var path in paths) {
+			var distFromFirst = Point.DistanceBetween(currentPosition, path.First);
+			var distFromLast  = Point.DistanceBetween(currentPosition, path.Last);
+
+			if (distFromFirst < curDist) {
+				minPath  = path;
+				curDist  = distFromFirst;
+				inverted = false;
+			}
+
+			if (distFromLast < curDist) {
+				minPath  = path;
+				curDist  = distFromLast;
+				inverted = true;
+			}
+		}
+
+		return (minPath, inverted, curDist);
 	}
 }
